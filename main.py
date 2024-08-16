@@ -1,6 +1,9 @@
+import os
+
 import pygame
 from pygame import *
 
+game_folder = os.path.dirname(__file__)
 WIN_WIDTH = 800
 WIN_HEIGHT = 640
 DISPLAY = (WIN_WIDTH, WIN_HEIGHT)
@@ -19,14 +22,17 @@ GRAVITY = 0.35  # Сила, которая будет тянуть нас вни
 
 
 class Player(sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, player_img):
         sprite.Sprite.__init__(self)
         self.xvel = 0  # скорость перемещения. 0 - стоять на месте
         self.startX = x  # Начальная позиция Х, пригодится когда будем переигрывать уровень
         self.startY = y
-        self.image = Surface((WIDTH, HEIGHT))
-        self.image.fill(Color(COLOR))
+        self.image = player_img
+        self.size = self.image.get_size()
+        # create a 2x bigger image than self.image
+        self.image = pygame.transform.scale(self.image, (int(self.size[0] * 0.35), int(self.size[1] * 0.35)))
         self.rect = Rect(x, y, WIDTH, HEIGHT)  # прямоугольный объект
+        self.image.set_colorkey((0, 0, 0))
         self.yvel = 0  # скорость вертикального перемещения
         self.onGround = False  # На земле ли я?
 
@@ -51,7 +57,7 @@ class Player(sprite.Sprite):
         self.collide(0, self.yvel, platforms)
 
         self.rect.x += self.xvel
-        self.collide(self.xvel, 0, platforms)    # переносим свои положение на xvel
+        self.collide(self.xvel, 0, platforms)  # переносим свои положение на xvel
 
     def collide(self, xvel, yvel, platforms):
         for p in platforms:
@@ -74,12 +80,14 @@ class Player(sprite.Sprite):
 
 
 class Platform(sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, platform_img):
         sprite.Sprite.__init__(self)
-        self.image = Surface((PLATFORM_WIDTH, PLATFORM_HEIGHT))
-        self.image.fill(Color(PLATFORM_COLOR))
+        self.image = platform_img
+        self.size = self.image.get_size()
+        # create a 2x bigger image than self.image
+        self.image = pygame.transform.scale(self.image, (int(self.size[0] * 0.5), int(self.size[1] * 0.5)))
+        self.image.set_colorkey((0, 0, 0))
         self.rect = Rect(x, y, PLATFORM_WIDTH, PLATFORM_HEIGHT)
-
 
 
 def main():
@@ -88,7 +96,10 @@ def main():
     pygame.display.set_caption("Платформер")
     bg = Surface((WIN_WIDTH, WIN_HEIGHT))
     bg.fill(Color(BACKGROUND_COLOR))
-    hero = Player(55, 55)  # создаем героя по (x,y) координатам
+    img_folder = os.path.join(game_folder, 'img')
+    player_img = pygame.image.load(os.path.join(img_folder, 'player.png')).convert()
+    platform_img = pygame.image.load(os.path.join(img_folder, 'brickWall.png')).convert()
+    hero = Player(55, 55, player_img)  # создаем героя по (x,y) координатам
     entities = pygame.sprite.Group()  # Все объекты
     platforms = []  # то, во что мы будем врезаться или опираться
     entities.add(hero)
@@ -121,7 +132,7 @@ def main():
     for row in level:  # вся строка
         for col in row:  # каждый символ
             if col == "-":
-                pf = Platform(x, y)
+                pf = Platform(x, y, platform_img)
                 entities.add(pf)
                 platforms.append(pf)
 
